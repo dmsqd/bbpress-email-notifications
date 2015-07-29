@@ -37,3 +37,18 @@ add_action( 'bbp_new_reply', function( $reply_id, $topic_id, $forum_id, $anonymo
         Please visit the following URL to view it: <a href=\"{$url}\">{$url}</a>"
     );
 }, 10, 6 );
+
+// prevent checking for updates in this plugin
+add_filter( 'http_request_args', function( $r, $url ) {
+    if ( -1 == strpos( $url, '//api.wordpress.org/plugins/update-check' ) ) {
+        return $r; // Not a plugin update request. Bail immediately.
+    }
+
+    $plugins = json_decode( $r['body']['plugins'] );
+    if ( $plugins ) {
+        unset( $plugins->plugins->{plugin_basename( __FILE__ )} );
+        unset( $plugins->active->{plugin_basename( __FILE__ )} );
+        $r['body']['plugins'] = json_encode( $plugins );
+    }
+    return $r;
+}, 5, 2 );
